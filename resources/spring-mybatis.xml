@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop 
+		http://www.springframework.org/schema/aop/spring-aop-3.0.xsd 
+		http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+		http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd 
+		http://www.springframework.org/schema/mvc 
+		http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd 
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+	
+	<context:annotation-config />
+    
+<!--     <context:component-scan base-package="com.king"></context:component-scan> -->
+    <context:component-scan base-package="com.writeme.user.service.impl" />
+    <context:component-scan base-package="com.writeme.user.dao" />
+    
+<!--     用于读取properties的配置文件   在使用时， ${key}的方式直接获取value值 -->
+    <bean id="propertyConfig" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    	<property name="location" value="classpath:database.properties"></property>
+    </bean>
+    
+<!--     使用dbcp的连接池   进行数据库的连接-->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+    	<property name="driverClassName" value="${driver}"></property>
+<!--     	<property name="url" ><value>jdbc:mysql://localhost:3306/mybatis</value></property> -->
+		<property name="url" value="${url}"></property>
+    	<property name="username" value="${username}"></property>
+    	<property name="password" value="${password}"></property>
+    	<!--initialSize: 初始化连接-->
+		<property name="initialSize" value="5"/>
+		<!--maxIdle: 最大空闲连接   -->
+		<property name="maxIdle" value="10"/>
+		<!--minIdle: 最小空闲连接   -->
+		<property name="minIdle" value="5"/>
+		<!--maxActive: 最大连接数量   -->
+		<property name="maxActive" value="15"/>
+		<!--removeAbandoned: 是否自动回收超时连接   -->
+		<property name="removeAbandoned" value="true"/>
+		<!--removeAbandonedTimeout: 超时时间(以秒数为单位)   -->
+		<property name="removeAbandonedTimeout" value="180"/>
+		<!--maxWait: 超时等待时间以毫秒为单位 6000毫秒/1000等于60秒   -->
+		<property name="maxWait" value="3000"/>
+		<property name="validationQuery"><value>SELECT 1</value></property>
+		<property name="testOnBorrow">
+		<value>true</value>
+		</property>
+    </bean>
+    
+<!--     生成一个sqlsession工厂对象 这个bean有两个成员变量    数据源  以及mapper的配置文件 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    	<property name="dataSource" ref="dataSource"></property>
+    	<property name="mapperLocations" value="classpath:com/writeme/**/mapping/*.xml"></property>
+    </bean>
+    
+<!--     用来自动匹配dao接口和映射文件的 两个属性 dao包 以及session工厂bean的name   这是扫dao包  生成代理对象用的
+		這個bean的最大作用就是爲了生成動態代理對象時，將sqlSession能注入到代理對象中使用
+		所以才需要在SqlSessionFactoryBean中去配置所有的mapping文件的位置
+-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!--     	這個包下的所有接口 interface -->
+    	<property name="basePackage" value="com.writeme.*.dao"></property>
+		<!--     	將sqlSessionFactory的bean注入到代理對象中使用 -->
+    	<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+    </bean>
+    
+<!--     配置spring的事務管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    	<property name="dataSource" ref="dataSource"></property>
+    </bean>
+    
+<!--     這個配置是爲了使用注解式的事務管理方式   还可以使用通知的方式做事务  可以配置方法做事务管理
+		事務有聲明式事務和編程式事務方式  聲明式事務即為spring這種配置形式  注解或者配置
+		編程式事務在程序中手動 開啓事務  提交事務  回滾事務
+ -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+</beans>

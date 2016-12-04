@@ -1,0 +1,5 @@
+eclipse.preferences.version=1
+encoding//resources/database.properties=UTF-8
+encoding//resources/log4j.properties=UTF-8
+encoding//resources/spring-mybatis.xml=UTF-8
+encoding/resources=UTF-8
